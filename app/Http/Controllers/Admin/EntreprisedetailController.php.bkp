@@ -1,0 +1,291 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: ndalaba
+ * Date: 26/05/15
+ * Time: 10:17
+ */
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Http\Models\About;
+use App\Http\Models\Entreprise;
+use App\Http\Models\EntrepriseDetails;
+use App\Http\Models\Help;
+use App\Http\Models\Adresse;
+use App\Http\Models\Service;
+use App\Http\Models\Produit;
+use App\Http\Models\Partenaire;
+use App\Http\Models\Ville;
+use Illuminate\Http\Request;
+
+class EntreprisedetailController extends Controller {
+
+    public function __construct() {
+        $this->filesize = config('application.image_size');
+    }
+
+    //ABOUT
+    public function about(Request $request, $id) {
+        return EntrepriseDetails::about($request, $id, 'admin.entreprises.about', 'admin/entreprise-detail/about/');
+        $about = About::where('entreprise_id', $id)->first();
+        if ($about == null)
+            $about = new About();
+        $entreprise = Entreprise::find($id);
+        if ($request->isMethod('post')) {
+            if ($about != null)
+                $about->delete();
+            About::create($request->all());
+            return redirect('admin/entreprise-detail/about/' . $id);
+        }
+        else {
+            return view('admin.entreprises.about')->with('about', $about)->with('entreprise', $entreprise);
+        }
+    }
+
+    //SERVICES
+    public function services($entreprise = 0) {
+        $services = Service::where('entreprise_id', $entreprise)->orderBy('service')->get();
+        $service = new Service();
+        $entreprise = Entreprise::find($entreprise);
+        return view('admin.entreprises.services')->with('service', $service)->with('services', $services)->with('entreprise', $entreprise);
+    }
+
+    public function service($entreprise = 0, $id = 0) {
+        $service = Service::find($id);
+        $services = Service::where('entreprise_id', $entreprise)->orderBy('service')->get();
+        $entreprise = Entreprise::find($entreprise);
+        if ($service == null)
+            $service = new Service();
+        return view('admin.entreprises.services')->with('service', $service)->with('services', $services)->with('entreprise', $entreprise);
+    }
+
+    public function createService(Request $request) {
+        if ($request->isMethod('post')) {
+            $error = "";
+            if (Help::checkElementObject('entreprise_id', $request->input('entreprise_id'), new Service(), 'service', $request->input('service'), $request->input('id', 0)))
+                $error = "Service déja enregistré";
+
+            if (strlen(trim($error)) > 0)
+                return redirect("admin/entreprise-detail/service/" . $request->input('entreprise_id') . '/' . $request->input('id', 0))->withInput()->with("error", $error);
+
+            Service::create($request->all());
+            return redirect('admin/entreprises-detail/services/' . $request->input('entreprise_id'));
+        }
+    }
+
+    public function updateService(Request $request) {
+        if ($request->isMethod('put')) {
+            $error = "";
+            if (Help::checkElementObject('entreprise_id', $request->input('service_id'), new Service(), 'service', $request->input('service'), $request->input('id', 0)))
+                $error = "Service déja enregistré";
+
+            if (strlen(trim($error)) > 0)
+                return redirect("admin/entreprise-detail/service/" . $request->input('entreprise_id') . '/' . $request->input('id', 0))->withInput()->with("error", $error);
+            $id = $request->input('id');
+            Service::find($id)->update($request->all());
+            return redirect('admin/entreprises-detail/services/' . $request->input('entreprise_id'));
+        }
+    }
+
+    public function deleteService($entreprise, $id) {
+        //$ids = $request->input($id);
+        Service::destroy($id);
+        return redirect('admin/entreprises-detail/services/' . $entreprise);
+    }
+
+    //ADRESSES
+    public function adresses($entreprise = 0) {
+        $adresses = Adresse::with('ville')->where('entreprise_id', $entreprise)->orderBy('adresse')->get();
+        $adresse = new Adresse();
+        $entreprise = Entreprise::find($entreprise);
+        $villes = Ville::orderBy('ville')->get();
+        return view('admin.entreprises.adresses')->with('adresse', $adresse)->with('adresses', $adresses)->with('entreprise', $entreprise)->with('villes', $villes);
+    }
+
+    public function adresse($entreprise = 0, $id = 0) {
+        $adresse = Adresse::find($id);
+        $adresses = Adresse::with('ville')->where('entreprise_id', $entreprise)->orderBy('adresse')->get();
+        $entreprise = Entreprise::find($entreprise);
+        if ($adresse == null)
+            $adresse = new Adresse();
+        $villes = Ville::orderBy('ville')->get();
+        return view('admin.entreprises.adresses')->with('adresse', $adresse)->with('adresses', $adresses)->with('entreprise', $entreprise)->with('villes', $villes);
+    }
+
+    public function createAdresse(Request $request) {
+        if ($request->isMethod('post')) {
+            $error = "";
+            if (Help::checkElementObject('entreprise_id', $request->input('entreprise_id'), new Adresse(), 'adresse', $request->input('adresse'), $request->input('id', 0)))
+                $error = "Adresse déja enregistré";
+
+            if (strlen(trim($error)) > 0)
+                return redirect("admin/entreprise-detail/adresse/" . $request->input('entreprise_id') . '/' . $request->input('id', 0))->withInput()->with("error", $error);
+
+            Adresse::create($request->all());
+            return redirect('admin/entreprises-detail/adresses/' . $request->input('entreprise_id'));
+        }
+    }
+
+    public function updateAdresse(Request $request) {
+        if ($request->isMethod('put')) {
+            $error = "";
+            if (Help::checkElementObject('entreprise_id', $request->input('adresse_id'), new Adresse(), 'adresse', $request->input('adresse'), $request->input('id', 0)))
+                $error = "Adresse déja enregistré";
+
+            if (strlen(trim($error)) > 0)
+                return redirect("admin/entreprise-detail/adresse/" . $request->input('entreprise_id') . '/' . $request->input('id', 0))->withInput()->with("error", $error);
+            $id = $request->input('id');
+            Adresse::find($id)->update($request->all());
+            return redirect('admin/entreprises-detail/adresses/' . $request->input('entreprise_id'));
+        }
+    }
+
+    public function deleteAdresse($entreprise, $id) {
+        //$ids = $request->input($id);
+        Adresse::destroy($id);
+        return redirect('admin/entreprises-detail/adresses/' . $entreprise);
+    }
+
+    //PRODUITS
+    public function produits($entreprise = 0) {
+        $produits = Produit::where('entreprise_id', $entreprise)->orderBy('produit')->get();
+        $produit = new Produit();
+        $entreprise = Entreprise::find($entreprise);
+        $villes = Ville::orderBy('ville')->get();
+        return view('admin.entreprises.produits')->with('produit', $produit)->with('produits', $produits)->with('entreprise', $entreprise)->with('villes', $villes);
+    }
+
+    public function produit($entreprise = 0, $id = 0) {
+        $produit = Produit::find($id);
+        $produits = Produit::where('entreprise_id', $entreprise)->orderBy('produit')->get();
+        $entreprise = Entreprise::find($entreprise);
+        if ($produit == null)
+            $produit = new Produit();
+        $villes = Ville::orderBy('ville')->get();
+        return view('admin.entreprises.produits')->with('produit', $produit)->with('produits', $produits)->with('entreprise', $entreprise)->with('villes', $villes);
+    }
+
+    public function createProduit(Request $request) {
+        if ($request->isMethod('post')) {
+            $error = "";
+            if (Help::checkElementObject('entreprise_id', $request->input('entreprise_id'), new Produit(), 'produit', $request->input('produit'), $request->input('id', 0)))
+                $error = "Produit déja enregistré";
+
+            if (strlen(trim($error)) > 0)
+                return redirect("admin/entreprise-detail/produit/" . $request->input('entreprise_id') . '/' . $request->input('id', 0))->withInput()->with("error", $error);
+            $extension = array('png', 'gif', 'jpg', 'jpeg');
+
+            if ($request->hasFile('fichier')) {
+                $fileName = Help::upload('fichier', 'entreprises/produits/', $this->filesize, $extension);
+                if ($fileName != null)
+                    $request->merge(array('image' => $fileName));
+            }
+            Produit::create($request->all());
+            return redirect('admin/entreprises-detail/produits/' . $request->input('entreprise_id'));
+        }
+    }
+
+    public function updateProduit(Request $request) {
+        if ($request->isMethod('put')) {
+            $error = "";
+            if (Help::checkElementObject('entreprise_id', $request->input('produit_id'), new Produit(), 'produit', $request->input('produit'), $request->input('id', 0)))
+                $error = "Produit déja enregistré";
+
+            if (strlen(trim($error)) > 0)
+                return redirect("admin/entreprise-detail/produit/" . $request->input('entreprise_id') . '/' . $request->input('id', 0))->withInput()->with("error", $error);
+
+            $id = $request->input('id');
+
+            $extension = array('png', 'gif', 'jpg', 'jpeg');
+
+            if ($request->hasFile('fichier')) {
+                $fileName = Help::upload('fichier', 'entreprises/produits/', $this->filesize, $extension);
+                if ($fileName != null)
+                    $request->merge(array('image' => $fileName));
+            }
+            Produit::find($id)->update($request->all());
+            return redirect('admin/entreprises-detail/produits/' . $request->input('entreprise_id'));
+        }
+    }
+
+    public function deleteProduit($entreprise, $id) {
+        $produit = Produit::find($id);
+        if (\File::exists('uploads/entreprises/produits/' . $produit->image))
+            \File::delete('uploads/entreprises/produits/' . $produit->image);
+        $produit->delete();
+        return redirect('admin/entreprises-detail/produits/' . $entreprise);
+    }
+
+    //PARTENAIRES
+    public function partenaires($entreprise = 0) {
+        $partenaires = Partenaire::where('entreprise_id', $entreprise)->orderBy('partenaire')->get();
+        $partenaire = new Partenaire();
+        $entreprise = Entreprise::find($entreprise);
+        $villes = Ville::orderBy('ville')->get();
+        return view('admin.entreprises.partenaires')->with('partenaire', $partenaire)->with('partenaires', $partenaires)->with('entreprise', $entreprise)->with('villes', $villes);
+    }
+
+    public function partenaire($entreprise = 0, $id = 0) {
+        $partenaire = Partenaire::find($id);
+        $partenaires = Partenaire::where('entreprise_id', $entreprise)->orderBy('partenaire')->get();
+        $entreprise = Entreprise::find($entreprise);
+        if ($partenaire == null)
+            $partenaire = new Partenaire();
+        $villes = Ville::orderBy('ville')->get();
+        return view('admin.entreprises.partenaires')->with('partenaire', $partenaire)->with('partenaires', $partenaires)->with('entreprise', $entreprise)->with('villes', $villes);
+    }
+
+    public function createPartenaire(Request $request) {
+        if ($request->isMethod('post')) {
+            $error = "";
+            if (Help::checkElementObject('entreprise_id', $request->input('entreprise_id'), new Partenaire(), 'partenaire', $request->input('partenaire'), $request->input('id', 0)))
+                $error = "Partenaire déja enregistré";
+
+            if (strlen(trim($error)) > 0)
+                return redirect("admin/entreprise-detail/partenaire/" . $request->input('entreprise_id') . '/' . $request->input('id', 0))->withInput()->with("error", $error);
+            $extension = array('png', 'gif', 'jpg', 'jpeg');
+
+            if ($request->hasFile('fichier')) {
+                $fileName = Help::upload('fichier', 'entreprises/partenaires/', $this->filesize, $extension);
+                if ($fileName != null)
+                    $request->merge(array('logo' => $fileName));
+            }
+            Partenaire::create($request->all());
+            return redirect('admin/entreprises-detail/partenaires/' . $request->input('entreprise_id'));
+        }
+    }
+
+    public function updatePartenaire(Request $request) {
+        if ($request->isMethod('put')) {
+            $error = "";
+            if (Help::checkElementObject('entreprise_id', $request->input('partenaire_id'), new Partenaire(), 'partenaire', $request->input('partenaire'), $request->input('id', 0)))
+                $error = "Partenaire déja enregistré";
+
+            if (strlen(trim($error)) > 0)
+                return redirect("admin/entreprise-detail/partenaire/" . $request->input('entreprise_id') . '/' . $request->input('id', 0))->withInput()->with("error", $error);
+
+            $id = $request->input('id');
+
+            $extension = array('png', 'gif', 'jpg', 'jpeg');
+
+            if ($request->hasFile('fichier')) {
+                $fileName = Help::upload('fichier', 'entreprises/partenaires/', $this->filesize, $extension);
+                if ($fileName != null)
+                    $request->merge(array('logo' => $fileName));
+            }
+            Partenaire::find($id)->update($request->all());
+            return redirect('admin/entreprises-detail/partenaires/' . $request->input('entreprise_id'));
+        }
+    }
+
+    public function deletePartenaire($entreprise, $id) {
+        //$ids = $request->input($id);
+        $partenaire = Partenaire::find($id);
+        if (\File::exists('uploads/entreprises/partenaires/' . $partenaire->logo))
+            \File::delete('uploads/entreprises/partenaires/' . $partenaire->logo);
+        $partenaire->delete();
+        return redirect('admin/entreprises-detail/partenaires/' . $entreprise);
+    }
+}
